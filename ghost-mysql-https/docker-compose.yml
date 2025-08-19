@@ -1,0 +1,49 @@
+#version: "3.9"
+services:
+  ghost-blog:
+    image: ghost:5
+    restart: always
+    depends_on:
+      - db
+    environment:
+      url: https://localhost
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ghost
+      database__connection__password: ghostpass
+      database__connection__database: ghostdb
+    networks:
+      - ghost-net
+
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ghostdb
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghostpass
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - ghost-net
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - ghost-blog
+    networks:
+      - ghost-net
+
+volumes:
+  db_data:
+
+networks:
+  ghost-net:
+    driver: bridge
